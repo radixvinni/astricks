@@ -43,7 +43,7 @@ class Mf:
   def usage(self):
     ex = AstUsageExplorer()
     ast.NodeVisitor.generic_visit(ex,self.ast)
-    return ex.usage, ex.calls, ex.names
+    return ex.usage | ex.calls
   
   def dump(self):
     return ast.dump(self.ast)

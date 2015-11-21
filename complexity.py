@@ -1,14 +1,15 @@
+#!/usr/bin/env python
+from __future__ import print_function
 import ast
 import sys
-import argparse
 import operator
 import collections
 
 import sympy
-
 from sympy import Basic
 from sympy.printing.str import StrPrinter
 
+from metafunc import Mf as _Mf, dump_python_source
 
 class CustomStrPrinter(StrPrinter):
     def _print_Dummy(self, expr):
@@ -207,7 +208,7 @@ class Visitor(VisitorBase):
             for k in range(i, j):
                 self.print_line(k)
 
-    def visit_FunctionDef(self, node):
+    def visit_FunctionDef_py3(self, node):
         # print((' Function %s (line %s) ' % (node.name, node.lineno))
         #       .center(79, '='))
         self.push_scope(Scope(self.current_scope, [arg.arg for arg in node.args.args]))
@@ -217,6 +218,36 @@ class Visitor(VisitorBase):
         def BigO(e):
             try:
                 return sympy.Order(e, (self.current_scope[node.args.args[0].arg], sympy.oo)).args[0]
+            except NotImplementedError:
+                return e
+        self.log("Function %s: O(%s)" %
+                 (node.name,
+                  BigO(self.current_scope.affect(self.steps))))
+        if self.current_scope.output is not None:
+            print("Result: %s" % (self.current_scope.affect(self.current_scope.output),))
+        # for n, e in self.current_scope._effects.items():
+        #     ee = BigO(e)
+        #     if ee.args:
+        #         print("%s:\n%s = O(%s)" % (n, e, ee.args[0]))
+        #     else:
+        #         print("%s:\n%s = O(??)" % (n, e))
+        self.pop_scope()
+        if self.unhandled:
+            print("Unhandled types: %s" %
+                  ', '.join(str(c) for c in self.unhandled))
+            self.unhandled = type(self.unhandled)()
+        print('')
+
+    def visit_FunctionDef(self, node):
+        # print((' Function %s (line %s) ' % (node.name, node.lineno))
+        #       .center(79, '='))
+        self.push_scope(Scope(self.current_scope, [arg.id for arg in node.args.args]))
+        self.steps = Dummy('T')
+        self.current_scope.add_effect(self.steps, sympy.S.One)
+        self.visit(node.body)
+        def BigO(e):
+            try:
+                return sympy.Order(e, (self.current_scope[node.args.args[0].id], sympy.oo)).args[0]
             except NotImplementedError:
                 return e
         self.log("Function %s: O(%s)" %
@@ -389,16 +420,18 @@ class Visitor(VisitorBase):
                 depcount[dep] -= 1
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('filename')
-    args = parser.parse_args()
-    with open(args.filename) as fp:
-        source = fp.read()
-    o = ast.parse(source, args.filename, 'exec')
-    visitor = Visitor(source)
-    visitor.visit(o)
+class Mf(_Mf):
+    support = set(["Return","Assign","BinOp","Compare","AugAssign","Num","Name","For","While","Load","Store","Add","Mult","Sub","Div","And","Lt","LtE","Gt","GtE","arguments","Call","range"])
+    
+    def complexity(self):
+      if self.usage()-self.support:
+        raise NotImplementedError("Unsopported syntax structures: %s"%(self.usage()-self.support,))
+      a = Visitor(dump_python_source(self.ast))
+      a.visit_FunctionDef(self.ast)
+      
+      for i in range(0,len(a._source_lines)):
+        a.print_line(i)
 
 
 if __name__ == "__main__":
-    main()
+    execfile("test_complexity.py")
