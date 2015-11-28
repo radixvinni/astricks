@@ -8,7 +8,7 @@ def Loop1(n):
             s = s + 1
     return s
 
-print(Loop1.complexity())
+print(Loop1)
 
 def Loop2(n):
     s = 0

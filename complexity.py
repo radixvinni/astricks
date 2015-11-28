@@ -24,8 +24,7 @@ def Dummy(name):
 
 
 class VisitorBase(ast.NodeVisitor):
-    def __init__(self, source):
-        self._source_lines = source.split('\n')
+    def __init__(self):
         self.scope_stack = []
         self.current_scope = None
         self.unhandled = set()
@@ -68,7 +67,6 @@ class VisitorBase(ast.NodeVisitor):
             lineno = col_offset = None
         print('At node %s' % node, file=file)
         if lineno is not None and lineno > 0:
-            print(self._source_lines[lineno - 1], file=file)
             print(' ' * col_offset + '^', file=file)
 
     def generic_visit(self, node):
@@ -84,19 +82,9 @@ class VisitorBase(ast.NodeVisitor):
     def visit_Module(self, node):
         self.visit_children(node)
 
-    def print_line(self, i):
-        line = self._source_lines[i]
-        if i not in self.log_lines:
-            print(line)
-            return
-        length = max(len(line), 38)
-        for j, c in enumerate(self.log_lines[i]):
-            if j == 0:
-                l = line
-            else:
-                l = ''
-            print('%s# %s' % (l.ljust(length), c))
-        del self.log_lines[i]
+    def print_lines(self):
+        return u'\n'.join([u'\n'.join(['#%s' % (c,) for c in self.log_lines[i]]) for i in self.log_lines])
+        
 
 
 class Scope(object):
@@ -426,10 +414,13 @@ class Mf(_Mf):
     def complexity(self):
       if self.usage()-self.support:
         raise NotImplementedError("Unsopported syntax structures: %s"%(self.usage()-self.support,))
-      a = Visitor(dump_python_source(self.ast))
+      a = Visitor()
       a.visit(self.ast)
-      
       self.vis = a
+      return a.print_lines()
+    
+    def __repr__(self):
+      return self.complexity() + dump_python_source(self.ast)
 
 
 if __name__ == "__main__":
