@@ -1,5 +1,5 @@
+from __future__ import print_function
 from complexity import Mf
-
 @Mf
 def Loop1(n):
     s = 0
@@ -8,7 +8,7 @@ def Loop1(n):
             s = s + 1
     return s
 
-print Loop1.complexity()
+print(Loop1.complexity())
 
 def Loop2(n):
     s = 0
@@ -47,14 +47,14 @@ def Loop6(n):
         s = s + 1
     return s
 
-def Loop1(n):
+def Loop7(n):
     s = 0
     for i in range(1, n + 1):
         for j in range(1, n + 1):
             s = s + 1
     return s
 
-def Loop2(n):
+def Loop8(n):
     i = 0
     while i < n:
         j = i

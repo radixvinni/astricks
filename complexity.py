@@ -427,10 +427,9 @@ class Mf(_Mf):
       if self.usage()-self.support:
         raise NotImplementedError("Unsopported syntax structures: %s"%(self.usage()-self.support,))
       a = Visitor(dump_python_source(self.ast))
-      a.visit_FunctionDef(self.ast)
+      a.visit(self.ast)
       
-      for i in range(0,len(a._source_lines)):
-        a.print_line(i)
+      self.vis = a
 
 
 if __name__ == "__main__":
