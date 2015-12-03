@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+#coding: utf-8
 from __future__ import print_function
 import ast
 import sys
@@ -9,7 +10,8 @@ import sympy
 from sympy import Basic
 from sympy.printing.str import StrPrinter
 
-from metafunc import Mf as _Mf, dump_python_source
+from halting import Mf as _Mf
+from meta import dump_python_source
 
 class CustomStrPrinter(StrPrinter):
     def _print_Dummy(self, expr):

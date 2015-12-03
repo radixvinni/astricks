@@ -5,29 +5,6 @@ from meta.decompiler import decompile_func, compile_func
 from meta import dump_python_source
 import ast
 
-class AstUsageExplorer (ast.NodeVisitor):
-  def __init__(self):
-    self.usage = set()
-    self.calls = set()
-    self.names = set()
-  
-  def visit_Call(self, node):
-    self.usage.add(type(node).__name__)
-    self.calls.add(ast.NodeVisitor.visit(self, node.func))
-  
-  def visit_Attribute(self, node):
-    self.usage.add(type(node).__name__)
-    return ast.NodeVisitor.visit(self, node.value) + '.' + node.attr
-  
-  def visit_Name(self, node):
-    self.usage.add(type(node).__name__)
-    self.names.add(node.id)
-    return node.id
-  
-  def generic_visit(self, node):
-    self.usage.add(type(node).__name__)
-    ast.NodeVisitor.generic_visit(self, node)
-
 class Mf:
   def __init__(self, func):
     self.ast = decompile_func(func)
@@ -39,11 +16,6 @@ class Mf:
         lineno=self.ast.lineno, 
         col_offset=self.ast.col_offset,
         decorator_list=[])
-  
-  def usage(self):
-    ex = AstUsageExplorer()
-    ast.NodeVisitor.generic_visit(ex,self.ast)
-    return ex.usage | ex.calls
   
   def dump(self):
     return ast.dump(self.ast)
