@@ -3,64 +3,13 @@
 "trying to use uncompyle2 + astor instead of Meta"
 
 from uncompyle2 import magics, scanner25, scanner26, scanner27, walker
+from metastring import compile_func, make_function_def
 
 from imp import get_magic
 from StringIO import StringIO
 from astor import to_source
 
 import ast
-
-def compile_func(ast_node, filename, globals, **defaults):
-    '''
-    Compile a function from an ast.FunctionDef instance.
-    :return: A python function object
-    '''
-
-    funcion_name = ast_node.name
-    module = ast.Module(body=[ast_node])
-
-    ctx = {'%s_default' % key : arg for key, arg in defaults.items()}
-    code = compile(module, filename, 'exec')
-    eval(code, globals, ctx)
-    function = ctx[funcion_name]
-
-    return function
-
-def make_function_def(code, stmnts, defaults=None, lineno=0):
-        "Make ast.FunctionDef of a function with given code and decompiled body"
-        if code.co_flags & 2:
-            vararg = None
-            kwarg = None
-
-        varnames = list(code.co_varnames[:code.co_argcount])
-        co_locals = list(code.co_varnames[code.co_argcount:])
-
-        #have var args
-        if code.co_flags & 4:
-            vararg = co_locals.pop(0)
-
-        #have kw args
-        if code.co_flags & 8:
-            kwarg = co_locals.pop(0)
-
-        args = [ast.Name(id=argname, ctx=ast.Param(), lineno=lineno, col_offset=0) for argname in varnames]
-            
-        args = ast.arguments(args=args,
-                              defaults=defaults if defaults else [],
-                              kwarg=kwarg,
-                              vararg=vararg,
-                              lineno=lineno, col_offset=0
-                              )
-        """if instructions.seen_yield: #TODO: generator functions
-                return_ = stmnts[-1]
-
-                assert isinstance(return_, ast.Return)
-                assert isinstance(return_.value, ast.Name)
-                assert return_.value.id == 'None'
-                return_.value = None"""
-        ast_obj = ast.FunctionDef(name='f' if code.co_name == '<lambda>' else code.co_name, args=args, body=stmnts, decorator_list=[], lineno=lineno, col_offset=0)
-
-        return ast_obj
 
 class Mf:
   def __init__(self, func):
@@ -99,7 +48,7 @@ class Mf:
     
     stmt = ast.parse(dump.getvalue()).body
     self.ast = make_function_def(co, stmt, func.__defaults__)
-    #TODO self.defaults = func.func_defaults if sys.version_info.major < 3 else func.__defaults__
+    #self.defaults = func.func_defaults if sys.version_info.major < 3 else func.__defaults__
   
   def dump(self):
     return ast.dump(self.ast)
